@@ -1,0 +1,15 @@
+httpx
+pydantic==1.10.5
+appdirs~=1.4.4
+randmac~=0.1
+pycryptodomex
+sqlalchemy==2.0.37
+psycopg2-binary==2.9.10
+requests==2.32.3
+cairosvg==2.7.1
+tinkoff-investments==0.2.0b109
+pytz==2024.2
+hvac
+python-telegram-bot==21.10
+setuptools
+aiohttp==3.11.12
