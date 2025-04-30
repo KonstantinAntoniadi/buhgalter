@@ -170,15 +170,12 @@ class Operation(BaseModel):
         values["brand_name"] = values["title"].get("plain", None)
 
         cashback_amount = Decimal(0)
-        if values["amount"]["plus"] is not None:
-            cashback_amount = Decimal(values["amount"]["plus"])
-        else:
-            services_cachback = values["cashback"].get(
-                "servicesCashback", []) if values["cashback"] else []
-            for cashback in services_cachback:
-                plus = Decimal(cashback.get("cashbackInfo", {}).get(
-                    "totalValue", {}).get("plus", 0))
-                cashback_amount += plus
+        services_cachback = values["cashback"].get(
+            "servicesCashback", []) if values["cashback"] else []
+        for cashback in services_cachback:
+            plus = Decimal(cashback.get("cashbackInfo", {}).get(
+                "totalValue", {}).get("plus", 0))
+            cashback_amount += plus
 
         values["cashback"] = cashback_amount
 
