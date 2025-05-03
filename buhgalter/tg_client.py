@@ -124,7 +124,7 @@ def bank_menu():
 CREDIT_CATEGORIES = ['Подарок', 'Зарплата', 'Перевод за то, что я оплатил']
 DEBIT_CATEGORIES = ['Фастфуд', 'Транспорт', 'Супермаркеты', 'Спорт',
                     'Салоны красоты и СПА', 'Рестораны и кафе', 'Одежда и обувь', 'Медицина и аптеки', 'Косметика',
-                    'Аксессуары', 'Электронника', 'Дом и быт', 'Комиссия банка', 'Подарок', 'Путешествия']
+                    'Аксессуары', 'Электронника', 'Дом и быт', 'Комиссия банка', 'Подарок', 'Путешествия', 'Образование']
 
 
 def credit_categroy_menu():
@@ -155,7 +155,8 @@ def debit_categroy_menu():
     markup.row(btn10, btn11, btn12)
     btn13 = types.KeyboardButton('Комиссия банка')
     btn14 = types.KeyboardButton('Подарок')
-    markup.row(btn13, btn14)
+    btn15 = types.KeyboardButton('Образование')
+    markup.row(btn13, btn14, btn15)
 
     return markup
 
