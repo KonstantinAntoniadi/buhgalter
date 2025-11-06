@@ -306,59 +306,63 @@ class AioNeolegoffAuth(AioNeolegoffModuleParent):
         :return:
         """
         print(f"is_login_required {self._neolegoff.is_login_required}")
-        response = await self.auth_entry()
-        _log_response
-        while isinstance(response, AuthNextStepResponse):
-            if response.step == "entry":
-                response = await self.auth_phone(phone_number, response.cid)
-                _log_response(response)
-            elif response.step == "otp":
-                code = yield
-                yield
-                response = await self.auth_sms_otp(
-                    code, response.token, response.cid
-                )
-                _log_response
-            elif response.step == "password":
-                response = await self.auth_password(password, response.cid)
-                _log_response
-            elif response.step == "fingerprint":
-                response = await self.auth_fingerprint(response.cid)
-                _log_response
-            elif response.step == "complete":
-                response = await self.auth_complete(response.cid)
-                _log_response
-
-        if isinstance(response, AuthCompleteResponse):
-            print("response is AuthCompleteResponse")
-            await self.auth_token(response.code)
-            await self.get_device_cipher_key()
-            await self.auth_device()
-
-        response = await self.auth_authorize()
-        _log_response
-        while isinstance(response, AuthNextStepResponse):
+        if self._neolegoff.is_login_required:
+            response = await self.auth_entry()
             _log_response
-            if response.step == "password":
-                response = await self.auth_password(password, response.cid)
+            while isinstance(response, AuthNextStepResponse):
+                if response.step == "entry":
+                    response = await self.auth_phone(phone_number, response.cid)
+                    _log_response(response)
+                elif response.step == "otp":
+                    code = yield
+                    yield
+                    response = await self.auth_sms_otp(
+                        code, response.token, response.cid
+                    )
+                    _log_response(response)
+                elif response.step == "password":
+                    response = await self.auth_password(password, response.cid)
+                    _log_response(response)
+                elif response.step == "fingerprint":
+                    response = await self.auth_fingerprint(response.cid)
+                    _log_response(response)
+                elif response.step == "complete":
+                    response = await self.auth_complete(response.cid)
+                    _log_response(response)
+                else:
+                    print(f"response = {response}")
+                    break
+
+            if isinstance(response, AuthCompleteResponse):
+                print("response is AuthCompleteResponse")
+                await self.auth_token(response.code)
+                await self.get_device_cipher_key()
+                await self.auth_device()
+
+            response = await self.auth_authorize()
+            _log_response
+            while isinstance(response, AuthNextStepResponse):
                 _log_response
-            elif response.step == "fingerprint":
-                response = await self.auth_fingerprint(response.cid)
-                _log_response
-            elif response.step == "card":
-                response = await self.auth_card(response.cid, card_number)
-                _log_response
-            elif response.step == "set-password":
-                response = await self.auth_set_password(response.cid, password)
-                _log_response
-            elif response.step == "complete":
-                response = await self.auth_complete(response.cid)
-                _log_response
-            elif response.step == "entry":
-                continue
-        if isinstance(response, AuthCompleteResponse):
-            await self.auth_token(response.code)
-            await self.get_device_cipher_key()
+                if response.step == "password":
+                    response = await self.auth_password(password, response.cid)
+                    _log_response
+                elif response.step == "fingerprint":
+                    response = await self.auth_fingerprint(response.cid)
+                    _log_response
+                elif response.step == "card":
+                    response = await self.auth_card(response.cid, card_number)
+                    _log_response
+                elif response.step == "set-password":
+                    response = await self.auth_set_password(response.cid, password)
+                    _log_response
+                elif response.step == "complete":
+                    response = await self.auth_complete(response.cid)
+                    _log_response
+                elif response.step == "entry":
+                    continue
+            if isinstance(response, AuthCompleteResponse):
+                await self.auth_token(response.code)
+                await self.get_device_cipher_key()
 
         await self.auth_device()
         return

@@ -22,7 +22,7 @@ from bank_clients.neolegoff_bank.models.auth.device_authorize import DeviceAutho
 
 class NeolegoffDeviceInfo(BaseModel):
     # May need an increase
-    app_version = "6.12.1"
+    app_version = "6.10.1"
     version = "3.1.2"
 
     # Unique device IDs

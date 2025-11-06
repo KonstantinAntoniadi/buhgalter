@@ -31,7 +31,8 @@ class TinkoffBankBalanceUpdater(BaseUpdater):
     async def update_operations(self):
         operations = (
             await self.client.operations.operations(
-                datetime.now(pytz.timezone("Europe/Moscow")) - timedelta(10)
+                start=datetime.now(pytz.timezone("Europe/Moscow")) - timedelta(days=10),
+                end=datetime.now(pytz.timezone("Europe/Moscow"))
                 # start=datetime(2025, 1, 20, 0, 0, 0, 0, )
             )
         ).operations
