@@ -173,7 +173,7 @@ class YandexClient:
             print(f"else self.session.cookies: {self.session.cookies}")
             self._save_session()
 
-        if yandex_bank_response.get("yandexAuthStatus") == "NEED_RESET":
+        if yandex_bank_response.get("yandexAuthStatus") in ["NEED_RESET", "NOAUTH"]:
             await self.authorize(self.login, is_force_auth=True)
 
     async def _graphql_request(self, domain, operation_name, operation_id, variables=None):
@@ -260,7 +260,9 @@ class YandexClient:
     async def get_operation_info(self, id) -> OperationResponse:
         self.session.cookies.set('yandexBankClientTimezone', 'Europe%2FMoscow')
 
-        response = await self._graphql_request(self.bank_domain, "GetOperationV2", "767d5b26e3ab7b544f89e5b5891cd1fafdcaac2268429d809aab9f29a233966c", {
+        response = await self._graphql_request(self.bank_domain, "GetOperationV2", "e6b5b0a0d70288a7ff94b4e8de7aa92c53d5f8b448c52021b5ad63ec57256ea4", {
             "id": id})
+    
+        # print(f"OperationResponse = {response.json()}")
 
         return response

@@ -1,6 +1,6 @@
 
 from datetime import datetime
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import BaseModel, ValidationError, Field, root_validator, validator
 from types import UnionType
 from typing import Any, TypeVar, Literal, Optional, List
 from ssl import SSLWantReadError
@@ -26,32 +26,36 @@ def prepare_response():
     def decorate(f: Func) -> Func:
         async def wrapper(self, *args, **kwargs):
             try:
-                response: Response | Any = await f(self, *args, **kwargs)
-            except (SSLWantReadError,) as e:
-                response: Response | Any = await f(self, *args, **kwargs)
-
-            return_type = f.__annotations__["return"]
-
-            if issubclass(type(return_type), type) and issubclass(
-                return_type, PayloadModel
-            ):  # extract payload from response model
-                model = BaseApiResponse(**response.json())
-
-                if model.is_success:
-                    payload_model = f.__annotations__["return"]
-                    return payload_model(payload=model.payload)
-            elif issubclass(type(return_type), UnionType):
                 try:
-                    model = pydantic_auto_detect(
-                        return_type.__args__, response.json())
-                except ValueError:
+                    response: Response | Any = await f(self, *args, **kwargs)
+                except (SSLWantReadError,) as e:
+                    response: Response | Any = await f(self, *args, **kwargs)
+
+                return_type = f.__annotations__["return"]
+
+                if issubclass(type(return_type), type) and issubclass(
+                    return_type, PayloadModel
+                ):  # extract payload from response model
+                    model = BaseApiResponse(**response.json())
+
+                    if model.is_success:
+                        payload_model = f.__annotations__["return"]
+                        return payload_model(payload=model.payload)
+                elif issubclass(type(return_type), UnionType):
+                    try:
+                        model = pydantic_auto_detect(
+                            return_type.__args__, response.json())
+                    except ValueError:
+                        model = return_type(**response.json())
+                else:
                     model = return_type(**response.json())
-            else:
-                model = return_type(**response.json())
 
-            return model
+                return model
 
-            return response
+                return response
+            except ValidationError as e:
+                print(e)
+                print(f"ValidationError = {response.json()}")
 
         return wrapper
 
@@ -128,7 +132,7 @@ class Operation(BaseModel):
     date: datetime
     status: str = Field(..., alias="statusCode")
     amount: Amount = Field(..., alias="amount")
-    type: Literal["debit", "credit"] = Field(..., alias="directionV2")
+    type: Optional[Literal["debit", "credit"]] = Field(...)
     group: str = None
     comment: Optional[str] = Field(..., alias="comment")
     cashback: Decimal
@@ -142,6 +146,10 @@ class Operation(BaseModel):
 
     @root_validator(pre=True)
     def add_raw(cls, values: dict):
+        if "directionV2" in values:
+            values["type"] = values["directionV2"]
+        elif "direction" in values:
+            values["type"] = values["direction"]
         values["raw"] = values.copy()
         values["date"] = parser.isoparse(values["date"])
         add_fields = values["additionalFields"]["additionalFields"]
@@ -152,9 +160,9 @@ class Operation(BaseModel):
             field_name = field["name"]
             if field_name == "Категория":
                 values["category"] = field.get("value", None)
-                if values["directionV2"] == f"CREDIT":
+                if values.get("direction", None) == "CREDIT" or values.get("directionV2", None) == "CREDIT":
                     values["group"] = "income"
-                elif values["directionV2"] == "DEBIT":
+                elif values.get("direction", None) == "DEBIT" or values.get("directionV2", None) == "DEBIT":
                     values["group"] = "pay"
             elif field_name == "Перевод с номера телефона":
                 values["sender_phone"] = field["value"]
@@ -187,7 +195,9 @@ class Operation(BaseModel):
             return "debit"
         elif value == "CREDIT":
             return "credit"
-        raise ValueError("Invalid transaction type")
+        elif value is None:
+            return None
+        raise ValueError(f"Invalid transaction type = {value}")
 
     @validator('status', pre=True)
     def convert_status(cls, value):
